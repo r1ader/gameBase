@@ -1,8 +1,10 @@
 class Entity {
+    /** 所有实体的固定数组 **/
     public static var ALL : FixedArray<Entity> = new FixedArray(1024);
+    /** 垃圾回收用的实体固定数组 **/
     public static var GC : FixedArray<Entity> = new FixedArray(ALL.maxSize);
 
-	// Various getters to access all important stuff easily
+	// 便于访问所有重要内容的各种getter
 	public var app(get,never) : App; inline function get_app() return App.ME;
 	public var game(get,never) : Game; inline function get_game() return Game.ME;
 	public var fx(get,never) : Fx; inline function get_fx() return Game.ME.fx;
@@ -15,76 +17,76 @@ class Entity {
 	var utmod(get,never) : Float; inline function get_utmod() return Game.ME.utmod;
 	public var hud(get,never) : ui.Hud; inline function get_hud() return Game.ME.hud;
 
-	/** Cooldowns **/
+	/** 冷却时间 **/
 	public var cd : dn.Cooldown;
 
-	/** Cooldowns, unaffected by slowmo (ie. always in realtime) **/
+	/** 不受慢动作影响的冷却时间（即始终以实时计算） **/
 	public var ucd : dn.Cooldown;
 
-	/** Temporary gameplay affects **/
+	/** 临时游戏效果 **/
 	var affects : Map<Affect,Float> = new Map();
 
-	/** State machine. Value should only be changed using `startState(v)` **/
+	/** 状态机。值应该只能通过`startState(v)`来改变 **/
 	public var state(default,null) : State;
 
-	/** Unique identifier **/
+	/** 唯一标识符 **/
 	public var uid(default,null) : Int;
 
-	/** Grid X coordinate **/
+	/** 网格X坐标 **/
     public var cx = 0;
-	/** Grid Y coordinate **/
+	/** 网格Y坐标 **/
     public var cy = 0;
-	/** Sub-grid X coordinate (from 0.0 to 1.0) **/
+	/** 网格内X坐标（从0.0到1.0） **/
     public var xr = 0.5;
-	/** Sub-grid Y coordinate (from 0.0 to 1.0) **/
+	/** 网格内Y坐标（从0.0到1.0） **/
     public var yr = 1.0;
 
 	var allVelocities : VelocityArray;
 
-	/** Base X/Y velocity of the Entity **/
+	/** 实体的基础X/Y速度 **/
 	public var vBase : Velocity;
-	/** "External bump" velocity. It is used to push the Entity in some direction, independently of the "user-controlled" base velocity. **/
+	/** "外部推力"速度。用于将实体推向某个方向，独立于"用户控制"的基础速度 **/
 	public var vBump : Velocity;
 
-	/** Last known X position of the attach point (in pixels), at the beginning of the latest fixedUpdate **/
+	/** 最新一次fixedUpdate开始时附着点的上一个已知X位置（像素） **/
 	var lastFixedUpdateX = 0.;
-	/** Last known Y position of the attach point (in pixels), at the beginning of the latest fixedUpdate **/
+	/** 最新一次fixedUpdate开始时附着点的上一个已知Y位置（像素） **/
 	var lastFixedUpdateY = 0.;
 
-	/** If TRUE, the sprite display coordinates will be an interpolation between the last known position and the current one. This is useful if the gameplay happens in the `fixedUpdate()` (so at 30 FPS), but you still want the sprite position to move smoothly at 60 FPS or more. **/
+	/** 如果为TRUE，精灵显示坐标将在最后已知位置和当前位置之间进行插值。如果游戏逻辑发生在`fixedUpdate()`中（所以是30 FPS），但你仍想让精灵位置在60 FPS或更高的帧率下平滑移动时这很有用 **/
 	var interpolateSprPos = true;
 
-	/** Total of all X velocities **/
+	/** 所有X速度的总和 **/
 	public var dxTotal(get,never) : Float; inline function get_dxTotal() return allVelocities.getSumX();
-	/** Total of all Y velocities **/
+	/** 所有Y速度的总和 **/
 	public var dyTotal(get,never) : Float; inline function get_dyTotal() return allVelocities.getSumY();
 
-	/** Pixel width of entity **/
+	/** 实体像素宽度 **/
 	public var wid(default,set) : Float = Const.GRID;
 		inline function set_wid(v) { invalidateDebugBounds=true;  return wid=v; }
 	public var iwid(get,set) : Int;
 		inline function get_iwid() return M.round(wid);
 		inline function set_iwid(v:Int) { invalidateDebugBounds=true; wid=v; return iwid; }
 
-	/** Pixel height of entity **/
+	/** 实体像素高度 **/
 	public var hei(default,set) : Float = Const.GRID;
 		inline function set_hei(v) { invalidateDebugBounds=true;  return hei=v; }
 	public var ihei(get,set) : Int;
 		inline function get_ihei() return M.round(hei);
 		inline function set_ihei(v:Int) { invalidateDebugBounds=true; hei=v; return ihei; }
 
-	/** Inner radius in pixels (ie. smallest value between width/height, then divided by 2) **/
+	/** 内部半径（像素）（即宽度/高度中较小值的一半） **/
 	public var innerRadius(get,never) : Float;
 		inline function get_innerRadius() return M.fmin(wid,hei)*0.5;
 
-	/** "Large" radius in pixels (ie. biggest value between width/height, then divided by 2) **/
+	/** "大"半径（像素）（即宽度/高度中较大值的一半） **/
 	public var largeRadius(get,never) : Float;
 		inline function get_largeRadius() return M.fmax(wid,hei)*0.5;
 
-	/** Horizontal direction, can only be -1 or 1 **/
+	/** 水平方向，只能是-1或1 **/
 	public var dir(default,set) = 1;
 
-	/** Current sprite X **/
+	/** 当前精灵X **/
 	public var sprX(get,never) : Float;
 		inline function get_sprX() {
 			return interpolateSprPos
@@ -92,7 +94,7 @@ class Entity {
 				: (cx+xr)*Const.GRID;
 		}
 
-	/** Current sprite Y **/
+	/** 当前精灵Y **/
 	public var sprY(get,never) : Float;
 		inline function get_sprY() {
 			return interpolateSprPos
@@ -100,98 +102,98 @@ class Entity {
 				: (cy+yr)*Const.GRID;
 		}
 
-	/** Sprite X scaling **/
+	/** 精灵X缩放 **/
 	public var sprScaleX = 1.0;
-	/** Sprite Y scaling **/
+	/** 精灵Y缩放 **/
 	public var sprScaleY = 1.0;
 
-	/** Sprite X squash & stretch scaling, which automatically comes back to 1 after a few frames **/
+	/** 精灵X挤压和拉伸缩放，会在几帧后自动恢复到1 **/
 	var sprSquashX = 1.0;
-	/** Sprite Y squash & stretch scaling, which automatically comes back to 1 after a few frames **/
+	/** 精灵Y挤压和拉伸缩放，会在几帧后自动恢复到1 **/
 	var sprSquashY = 1.0;
 
-	/** Entity visibility **/
+	/** 实体可见性 **/
 	public var entityVisible = true;
 
-	/** Current hit points **/
+	/** 当前生命值 **/
 	public var life(default,null) : dn.struct.Stat<Int>;
-	/** Last source of damage if it was an Entity **/
+	/** 如果最后一个伤害来源是实体则记录该实体 **/
 	public var lastDmgSource(default,null) : Null<Entity>;
 
-	/** Horizontal direction (left=-1 or right=1): from "last source of damage" to "this" **/
+	/** 水平方向（左=-1或右=1）：从"最后伤害来源"到"此实体" **/
 	public var lastHitDirFromSource(get,never) : Int;
 	inline function get_lastHitDirFromSource() return lastDmgSource==null ? -dir : -dirTo(lastDmgSource);
 
-	/** Horizontal direction (left=-1 or right=1): from "this" to "last source of damage" **/
+	/** 水平方向（左=-1或右=1）：从"此实体"到"最后伤害来源" **/
 	public var lastHitDirToSource(get,never) : Int;
 		inline function get_lastHitDirToSource() return lastDmgSource==null ? dir : dirTo(lastDmgSource);
 
-	/** Main entity HSprite instance **/
+	/** 主要实体HSprite实例 **/
     public var spr : HSprite;
 
-	/** Color vector transformation applied to sprite **/
+	/** 应用于精灵的颜色向量变换 **/
 	public var baseColor : h3d.Vector;
 
-	/** Color matrix transformation applied to sprite **/
+	/** 应用于精灵的颜色矩阵变换 **/
 	public var colorMatrix : h3d.Matrix;
 
-	// Animated blink color on damage hit
+	// 受伤时的动画闪烁颜色
 	var blinkColor : h3d.Vector;
 
-	/** Sprite X shake power **/
+	/** 精灵X轴抖动强度 **/
 	var shakePowX = 0.;
-	/** Sprite Y shake power **/
+	/** 精灵Y轴抖动强度 **/
 	var shakePowY = 0.;
 
-	// Debug stuff
+	// 调试相关
 	var debugLabel : Null<h2d.Text>;
 	var debugBounds : Null<h2d.Graphics>;
 	var invalidateDebugBounds = false;
 
-	/** Defines X alignment of entity at its attach point (0 to 1.0) **/
+	/** 定义实体在其附着点的X对齐（0到1.0） **/
 	public var pivotX(default,set) : Float = 0.5;
-	/** Defines Y alignment of entity at its attach point (0 to 1.0) **/
+	/** 定义实体在其附着点的Y对齐（0到1.0） **/
 	public var pivotY(default,set) : Float = 1;
 
-	/** Entity attach X pixel coordinate **/
+	/** 实体附着点X像素坐标 **/
 	public var attachX(get,never) : Float; inline function get_attachX() return (cx+xr)*Const.GRID;
-	/** Entity attach Y pixel coordinate **/
+	/** 实体附着点Y像素坐标 **/
 	public var attachY(get,never) : Float; inline function get_attachY() return (cy+yr)*Const.GRID;
 
-	// Various coordinates getters, for easier gameplay coding
+	// 便于游戏编程的各种坐标获取器
 
-	/** Left pixel coordinate of the bounding box **/
+	/** 边界框左侧像素坐标 **/
 	public var left(get,never) : Float; inline function get_left() return attachX + (0-pivotX) * wid;
-	/** Right pixel coordinate of the bounding box **/
+	/** 边界框右侧像素坐标 **/
 	public var right(get,never) : Float; inline function get_right() return attachX + (1-pivotX) * wid;
-	/** Top pixel coordinate of the bounding box **/
+	/** 边界框顶部像素坐标 **/
 	public var top(get,never) : Float; inline function get_top() return attachY + (0-pivotY) * hei;
-	/** Bottom pixel coordinate of the bounding box **/
+	/** 边界框底部像素坐标 **/
 	public var bottom(get,never) : Float; inline function get_bottom() return attachY + (1-pivotY) * hei;
 
-	/** Center X pixel coordinate of the bounding box **/
+	/** 边界框中心X像素坐标 **/
 	public var centerX(get,never) : Float; inline function get_centerX() return attachX + (0.5-pivotX) * wid;
-	/** Center Y pixel coordinate of the bounding box **/
+	/** 边界框中心Y像素坐标 **/
 	public var centerY(get,never) : Float; inline function get_centerY() return attachY + (0.5-pivotY) * hei;
 
-	/** Current X position on screen (ie. absolute)**/
+	/** 当前在屏幕上的X位置（即绝对位置） **/
 	public var screenAttachX(get,never) : Float;
 		inline function get_screenAttachX() return game!=null && !game.destroyed ? sprX*Const.SCALE + game.scroller.x : sprX*Const.SCALE;
 
-	/** Current Y position on screen (ie. absolute)**/
+	/** 当前在屏幕上的Y位置（即绝对位置） **/
 	public var screenAttachY(get,never) : Float;
 		inline function get_screenAttachY() return game!=null && !game.destroyed ? sprY*Const.SCALE + game.scroller.y : sprY*Const.SCALE;
 
-	/** attachX value during last frame **/
+	/** 上一帧的attachX值 **/
 	public var prevFrameAttachX(default,null) : Float = -Const.INFINITE;
-	/** attachY value during last frame **/
+	/** 上一帧的attachY值 **/
 	public var prevFrameAttachY(default,null) : Float = -Const.INFINITE;
 
 	var actions : RecyclablePool<tools.ChargedAction>;
 
 
 	/**
-		Constructor
+		构造函数
 	**/
     public function new(x:Int, y:Int) {
         uid = Const.makeUniqueId();
@@ -222,6 +224,7 @@ class Entity {
     }
 
 
+	/** 注册一个新的速度 **/
 	public function registerNewVelocity(frict:Float) : Velocity {
 		var v = Velocity.createFrict(frict);
 		allVelocities.push(v);
@@ -229,7 +232,7 @@ class Entity {
 	}
 
 
-	/** Remove sprite from display context. Only do that if you're 100% sure your entity won't need the `spr` instance itself. **/
+	/** 从显示上下文中移除精灵。只有在你100%确定你的实体不会需要`spr`实例本身时才这么做 **/
 	function noSprite() {
 		spr.setEmptyTexture();
 		spr.remove();
@@ -250,12 +253,12 @@ class Entity {
 		return pivotY;
 	}
 
-	/** Initialize current and max hit points **/
+	/** 初始化当前和最大生命值 **/
 	public function initLife(v) {
 		life.initMaxOnMax(v);
 	}
 
-	/** Inflict damage **/
+	/** 造成伤害 **/
 	public function hit(dmg:Int, from:Null<Entity>) {
 		if( !isAlive() || dmg<=0 )
 			return;
@@ -267,7 +270,7 @@ class Entity {
 			onDie();
 	}
 
-	/** Kill instantly **/
+	/** 立即击杀 **/
 	public function kill(by:Null<Entity>) {
 		if( isAlive() )
 			hit(life.v, by);
@@ -283,12 +286,12 @@ class Entity {
 		return dir = v>0 ? 1 : v<0 ? -1 : dir;
 	}
 
-	/** Return TRUE if current entity wasn't destroyed or killed **/
+	/** 如果当前实体未被销毁或击杀则返回TRUE **/
 	public inline function isAlive() {
 		return !destroyed && life.v>0;
 	}
 
-	/** Move entity to grid coordinates **/
+	/** 将实体移动到网格坐标 **/
 	public function setPosCase(x:Int, y:Int) {
 		cx = x;
 		cy = y;
@@ -297,7 +300,7 @@ class Entity {
 		onPosManuallyChangedBoth();
 	}
 
-	/** Move entity to pixel coordinates **/
+	/** 将实体移动到像素坐标 **/
 	public function setPosPixel(x:Float, y:Float) {
 		cx = Std.int(x/Const.GRID);
 		cy = Std.int(y/Const.GRID);
@@ -306,7 +309,7 @@ class Entity {
 		onPosManuallyChangedBoth();
 	}
 
-	/** Should be called when you manually (ie. ignoring physics) modify both X & Y entity coordinates **/
+	/** 当你手动（即忽略物理）修改X和Y实体坐标时应该调用此函数 **/
 	function onPosManuallyChangedBoth() {
 		if( M.dist(attachX,attachY,prevFrameAttachX,prevFrameAttachY) > Const.GRID*2 ) {
 			prevFrameAttachX = attachX;
@@ -315,14 +318,14 @@ class Entity {
 		updateLastFixedUpdatePos();
 	}
 
-	/** Should be called when you manually (ie. ignoring physics) modify entity X coordinate **/
+	/** 当你手动（即忽略物理）修改实体X坐标时应该调用此函数 **/
 	function onPosManuallyChangedX() {
 		if( M.fabs(attachX-prevFrameAttachX) > Const.GRID*2 )
 			prevFrameAttachX = attachX;
 		lastFixedUpdateX = attachX;
 	}
 
-	/** Should be called when you manually (ie. ignoring physics) modify entity Y coordinate **/
+	/** 当你手动（即忽略物理）修改实体Y坐标时应该调用此函数 **/
 	function onPosManuallyChangedY() {
 		if( M.fabs(attachY-prevFrameAttachY) > Const.GRID*2 )
 			prevFrameAttachY = attachY;
@@ -330,26 +333,26 @@ class Entity {
 	}
 
 
-	/** Quickly set X/Y pivots. If Y is omitted, it will be equal to X. **/
+	/** 快速设置X/Y轴心点。如果省略Y，它将等于X **/
 	public function setPivots(x:Float, ?y:Float) {
 		pivotX = x;
 		pivotY = y!=null ? y : x;
 	}
 
-	/** Return TRUE if the Entity *center point* is in screen bounds (default padding is +32px) **/
+	/** 如果实体*中心点*在屏幕范围内则返回TRUE（默认边距为+32px） **/
 	public inline function isOnScreenCenter(padding=32) {
 		return camera.isOnScreen( centerX, centerY, padding + M.fmax(wid*0.5, hei*0.5) );
 	}
 
-	/** Return TRUE if the Entity rectangle is in screen bounds (default padding is +32px) **/
+	/** 如果实体矩形在屏幕范围内则返回TRUE（默认边距为+32px） **/
 	public inline function isOnScreenBounds(padding=32) {
 		return camera.isOnScreenRect( left,top, wid, hei, padding );
 	}
 
 
 	/**
-		Changed the current entity state.
-		Return TRUE if the state is `s` after the call.
+		改变当前实体状态。
+		如果调用后状态为`s`则返回TRUE。
 	**/
 	public function startState(s:State) : Bool {
 		if( s==state )
@@ -365,21 +368,21 @@ class Entity {
 	}
 
 
-	/** Return TRUE to allow a change of the state value **/
+	/** 返回TRUE以允许状态值的改变 **/
 	function canChangeStateTo(from:State, to:State) {
 		return true;
 	}
 
-	/** Called when state is changed to a new value **/
+	/** 当状态改变为新值时调用 **/
 	function onStateChange(old:State, newState:State) {}
 
 
-	/** Apply a bump/kick force to entity **/
+	/** 对实体施加推力/踢力 **/
 	public function bump(x:Float,y:Float) {
 		vBump.addXY(x,y);
 	}
 
-	/** Reset velocities to zero **/
+	/** 将速度重置为零 **/
 	public function cancelVelocities() {
 		allVelocities.clearAll();
 	}
@@ -387,19 +390,19 @@ class Entity {
 	public function is<T:Entity>(c:Class<T>) return Std.isOfType(this, c);
 	public function as<T:Entity>(c:Class<T>) : T return Std.downcast(this, c);
 
-	/** Return a random Float value in range [min,max]. If `sign` is TRUE, returned value might be multiplied by -1 randomly. **/
+	/** 返回范围[min,max]内的随机Float值。如果`sign`为TRUE，返回的值可能随机乘以-1 **/
 	public inline function rnd(min,max,?sign) return Lib.rnd(min,max,sign);
-	/** Return a random Integer value in range [min,max]. If `sign` is TRUE, returned value might be multiplied by -1 randomly. **/
+	/** 返回范围[min,max]内的随机Integer值。如果`sign`为TRUE，返回的值可能随机乘以-1 **/
 	public inline function irnd(min,max,?sign) return Lib.irnd(min,max,sign);
 
-	/** Truncate a float value using given `precision` **/
+	/** 使用给定的`precision`截断float值 **/
 	public inline function pretty(value:Float,?precision=1) return M.pretty(value,precision);
 
 	public inline function dirTo(e:Entity) return e.centerX<centerX ? -1 : 1;
 	public inline function dirToAng() return dir==1 ? 0. : M.PI;
 	public inline function getMoveAng() return Math.atan2(dyTotal,dxTotal);
 
-	/** Return a distance (in grid cells) from this to something **/
+	/** 返回从此实体到某物的距离（以网格单位计） **/
 	public inline function distCase(?e:Entity, ?tcx:Int, ?tcy:Int, txr=0.5, tyr=0.5) {
 		if( e!=null )
 			return M.dist(cx+xr, cy+yr, e.cx+e.xr, e.cy+e.yr);
@@ -407,7 +410,7 @@ class Entity {
 			return M.dist(cx+xr, cy+yr, tcx+txr, tcy+tyr);
 	}
 
-	/** Return a distance (in pixels) from this to something **/
+	/** 返回从此实体到某物的距离（以像素计） **/
 	public inline function distPx(?e:Entity, ?x:Float, ?y:Float) {
 		if( e!=null )
 			return M.dist(attachX, attachY, e.attachX, e.attachY);
@@ -419,7 +422,7 @@ class Entity {
 		return !level.hasCollision(cx,cy) || this.cx==cx && this.cy==cy;
 	}
 
-	/** Check if the grid-based line between this and given target isn't blocked by some obstacle **/
+	/** 检查此实体与给定目标之间的基于网格的线是否被某些障碍物阻挡 **/
 	public inline function sightCheck(?e:Entity, ?tcx:Int, ?tcy:Int) {
 		if( e!=null)
 			return e==this ? true : dn.geom.Bresenham.checkThinLine(cx, cy, e.cx, e.cy, canSeeThrough);
@@ -427,10 +430,10 @@ class Entity {
 			return dn.geom.Bresenham.checkThinLine(cx, cy, tcx, tcy, canSeeThrough);
 	}
 
-	/** Create a LPoint instance from current coordinates **/
+	/** 从当前坐标创建一个LPoint实例 **/
 	public inline function createPoint() return LPoint.fromCase(cx+xr,cy+yr);
 
-	/** Create a LRect instance from current entity bounds **/
+	/** 从当前实体边界创建一个LRect实例 **/
 	public inline function createRect() return tools.LRect.fromPixels( Std.int(left), Std.int(top), Std.int(wid), Std.int(hei) );
 
     public final function destroy() {
@@ -470,13 +473,13 @@ class Entity {
     }
 
 
-	/** Print some numeric value below entity **/
+	/** 在实体下方打印一些数值 **/
 	public inline function debugFloat(v:Float, c:Col=0xffffff) {
 		debug( pretty(v), c );
 	}
 
 
-	/** Print some value below entity **/
+	/** 在实体下方打印一些值 **/
 	public inline function debug(?v:Dynamic, c:Col=0xffffff) {
 		#if debug
 		if( v==null && debugLabel!=null ) {
@@ -494,7 +497,7 @@ class Entity {
 		#end
 	}
 
-	/** Hide entity debug bounds **/
+	/** 隐藏实体调试边界 **/
 	public function disableDebugBounds() {
 		if( debugBounds!=null ) {
 			debugBounds.remove();
@@ -503,7 +506,7 @@ class Entity {
 	}
 
 
-	/** Show entity debug bounds (position and width/height). Use the `/bounds` command in Console to enable them. **/
+	/** 显示实体调试边界（位置和宽度/高度）。使用控制台中的`/bounds`命令启用它们 **/
 	public function enableDebugBounds() {
 		if( debugBounds==null ) {
 			debugBounds = new h2d.Graphics();
@@ -516,22 +519,22 @@ class Entity {
 		var c = Col.fromHsl((uid%20)/20, 1, 1);
 		debugBounds.clear();
 
-		// Bounds rect
+		// 边界矩形
 		debugBounds.lineStyle(1, c, 0.5);
 		debugBounds.drawRect(left-attachX, top-attachY, wid, hei);
 
-		// Attach point
+		// 附着点
 		debugBounds.lineStyle(0);
 		debugBounds.beginFill(c,0.8);
 		debugBounds.drawRect(-1, -1, 3, 3);
 		debugBounds.endFill();
 
-		// Center
+		// 中心
 		debugBounds.lineStyle(1, c, 0.3);
 		debugBounds.drawCircle(centerX-attachX, centerY-attachY, 3);
 	}
 
-	/** Wait for `sec` seconds, then runs provided callback. **/
+	/** 等待`sec`秒，然后运行提供的回调 **/
 	function chargeAction(id:ChargedActionId, sec:Float, onComplete:ChargedAction->Void, ?onProgress:ChargedAction->Void) {
 		if( !isAlive() )
 			return;
@@ -547,7 +550,7 @@ class Entity {
 			a.onProgress = onProgress;
 	}
 
-	/** If id is null, return TRUE if any action is charging. If id is provided, return TRUE if this specific action is charging nokw. **/
+	/** 如果id为null，在有任何动作正在充能时返回TRUE。如果提供了id，在这个特定动作正在充能时返回TRUE **/
 	public function isChargingAction(?id:ChargedActionId) {
 		if( !isAlive() )
 			return false;
@@ -579,7 +582,7 @@ class Entity {
 		}
 	}
 
-	/** Action management loop **/
+	/** 动作管理循环 **/
 	function updateActions() {
 		if( !isAlive() )
 			return;
@@ -602,7 +605,7 @@ class Entity {
 		return hasAffect(k) ? affects.get(k) : 0.;
 	}
 
-	/** Add an Affect. If `allowLower` is TRUE, it is possible to override an existing Affect with a shorter duration. **/
+	/** 添加一个效果。如果`allowLower`为TRUE，则可以用更短的持续时间覆盖现有效果 **/
 	public function setAffectS(k:Affect, t:Float, allowLower=false) {
 		if( !isAlive() || affects.exists(k) && affects.get(k)>t && !allowLower )
 			return;
@@ -617,7 +620,7 @@ class Entity {
 		}
 	}
 
-	/** Multiply an Affect duration by a factor `f` **/
+	/** 将效果持续时间乘以系数`f` **/
 	public function mulAffectS(k:Affect, f:Float) {
 		if( hasAffect(k) )
 			setAffectS(k, getAffectDurationS(k)*f, true);
@@ -630,7 +633,7 @@ class Entity {
 		}
 	}
 
-	/** Affects update loop **/
+	/** 效果更新循环 **/
 	function updateAffects() {
 		if( !isAlive() )
 			return;
@@ -648,12 +651,12 @@ class Entity {
 	function onAffectStart(k:Affect) {}
 	function onAffectEnd(k:Affect) {}
 
-	/** Return TRUE if the entity is active and has no status affect that prevents actions. **/
+	/** 如果实体处于活动状态且没有阻止动作的状态效果，则返回TRUE **/
 	public function isConscious() {
 		return !hasAffect(Stun) && isAlive();
 	}
 
-	/** Blink `spr` briefly (eg. when damaged by something) **/
+	/** 让`spr`短暂闪烁（例如，当受到某些伤害时） **/
 	public function blink(c:Col) {
 		blinkColor.setColor(c);
 		cd.setS("keepBlink",0.06);
@@ -665,13 +668,13 @@ class Entity {
 		shakePowY = yPow;
 	}
 
-	/** Briefly squash sprite on X (Y changes accordingly). "1.0" means no distorsion. **/
+	/** 短暂在X轴上压扁精灵（Y相应改变）。"1.0"表示无变形 **/
 	public function setSquashX(scaleX:Float) {
 		sprSquashX = scaleX;
 		sprSquashY = 2-scaleX;
 	}
 
-	/** Briefly squash sprite on Y (X changes accordingly). "1.0" means no distorsion. **/
+	/** 短暂在Y轴上压扁精灵（X相应改变）。"1.0"表示无变形 **/
 	public function setSquashY(scaleY:Float) {
 		sprSquashX = 2-scaleY;
 		sprSquashY = scaleY;
@@ -679,7 +682,7 @@ class Entity {
 
 
 	/**
-		"Beginning of the frame" loop, called before any other Entity update loop
+		"帧开始"循环，在任何其他Entity更新循环之前调用
 	**/
     public function preUpdate() {
 		ucd.update(utmod);
@@ -689,7 +692,7 @@ class Entity {
 
 
 		#if debug
-		// Display the list of active "affects" (with `/set affect` in console)
+		// 显示活动的"效果"列表（在控制台中使用`/set affect`）
 		if( ui.Console.ME.hasFlag(F_Affects) ) {
 			var all = [];
 			for(k in affects.keys())
@@ -697,11 +700,11 @@ class Entity {
 			debug(all);
 		}
 
-		// Show bounds (with `/bounds` in console)
+		// 显示边界（在控制台中使用`/bounds`）
 		if( ui.Console.ME.hasFlag(F_Bounds) && debugBounds==null )
 			enableDebugBounds();
 
-		// Hide bounds
+		// 隐藏边界
 		if( !ui.Console.ME.hasFlag(F_Bounds) && debugBounds!=null )
 			disableDebugBounds();
 		#end
@@ -709,7 +712,7 @@ class Entity {
     }
 
 	/**
-		Post-update loop, which is guaranteed to happen AFTER any preUpdate/update. This is usually where render and display is updated
+		后更新循环，保证在任何preUpdate/update之后发生。这通常是更新渲染和显示的地方
 	**/
     public function postUpdate() {
 		spr.x = sprX;
@@ -726,26 +729,26 @@ class Entity {
 			spr.y += Math.sin(0.3+ftime*1.7)*shakePowY * cd.getRatio("shaking");
 		}
 
-		// Blink
+		// 闪烁
 		if( !cd.has("keepBlink") ) {
 			blinkColor.r*=Math.pow(0.60, tmod);
 			blinkColor.g*=Math.pow(0.55, tmod);
 			blinkColor.b*=Math.pow(0.50, tmod);
 		}
 
-		// Color adds
+		// 颜色添加
 		spr.colorAdd.load(baseColor);
 		spr.colorAdd.r += blinkColor.r;
 		spr.colorAdd.g += blinkColor.g;
 		spr.colorAdd.b += blinkColor.b;
 
-		// Debug label
+		// 调试标签
 		if( debugLabel!=null ) {
 			debugLabel.x = Std.int(attachX - debugLabel.textWidth*0.5);
 			debugLabel.y = Std.int(attachY+1);
 		}
 
-		// Debug bounds
+		// 调试边界
 		if( debugBounds!=null ) {
 			if( invalidateDebugBounds ) {
 				invalidateDebugBounds = false;
@@ -757,7 +760,7 @@ class Entity {
 	}
 
 	/**
-		Loop that runs at the absolute end of the frame
+		在帧的绝对末尾运行的循环
 	**/
 	public function finalUpdate() {
 		prevFrameAttachX = attachX;
@@ -772,43 +775,43 @@ class Entity {
 
 
 
-	/** Called at the beginning of each X movement step **/
+	/** 在每个X移动步骤开始时调用 **/
 	function onPreStepX() {
 	}
 
-	/** Called at the beginning of each Y movement step **/
+	/** 在每个Y移动步骤开始时调用 **/
 	function onPreStepY() {
 	}
 
 
 	/**
-		Main loop, but it only runs at a "guaranteed" 30 fps (so it might not be called during some frames, if the app runs at 60fps). This is usually where most gameplay elements affecting physics should occur, to ensure these will not depend on FPS at all.
+		主循环，但它只在"保证"的30 fps下运行（所以如果应用程序以60fps运行，在某些帧中可能不会被调用）。这通常是大多数影响物理的游戏元素应该发生的地方，以确保这些不会依赖于FPS。
 	**/
 	public function fixedUpdate() {
 		updateLastFixedUpdatePos();
 
 		/*
-			Stepping: any movement greater than 33% of grid size (ie. 0.33) will increase the number of `steps` here. These steps will break down the full movement into smaller iterations to avoid jumping over grid collisions.
+			步进：任何大于网格大小33%的移动（即0.33）都会增加这里的`steps`数量。这些步骤将把完整的移动分解成更小的迭代，以避免跳过网格碰撞。
 		*/
 		var steps = M.ceil( ( M.fabs(dxTotal) + M.fabs(dyTotal) ) / 0.33 );
 		if( steps>0 ) {
 			var n = 0;
 			while ( n<steps ) {
-				// X movement
+				// X移动
 				xr += dxTotal / steps;
 
 				if( dxTotal!=0 )
-					onPreStepX(); // <---- Add X collisions checks and physics in here
+					onPreStepX(); // <---- 在这里添加X碰撞检查和物理
 
 				while( xr>1 ) { xr--; cx++; }
 				while( xr<0 ) { xr++; cx--; }
 
 
-				// Y movement
+				// Y移动
 				yr += dyTotal / steps;
 
 				if( dyTotal!=0 )
-					onPreStepY(); // <---- Add Y collisions checks and physics in here
+					onPreStepY(); // <---- 在这里添加Y碰撞检查和物理
 
 				while( yr>1 ) { yr--; cy++; }
 				while( yr<0 ) { yr++; cy--; }
@@ -817,14 +820,14 @@ class Entity {
 			}
 		}
 
-		// Update velocities
+		// 更新速度
 		for(v in allVelocities)
 			v.fixedUpdate();
 	}
 
 
 	/**
-		Main loop running at full FPS (ie. always happen once on every frames, after preUpdate and before postUpdate)
+		以完整FPS运行的主循环（即在每一帧上总是发生一次，在preUpdate之后和postUpdate之前）
 	**/
     public function frameUpdate() {
     }
