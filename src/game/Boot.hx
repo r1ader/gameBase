@@ -1,55 +1,55 @@
 /**
-	Boot class is the entry point for the app.
-	It doesn't do much, except creating Main class and taking care of loops. Thus, you shouldn't be doing too much in this class.
+	Boot类是应用程序的入口点。
+	它的功能比较简单，主要是创建Main类并处理游戏循环。因此，你不应该在这个类中做太多事情。
 **/
 
 class Boot extends hxd.App {
 	#if debug
-	// Debug controls over game speed
+	// 调试模式下控制游戏速度
 	var tmodSpeedMul = 1.0;
 
-	// Shortcut to controller
+	// 控制器的快捷引用
 	var ca(get,never) : ControllerAccess<GameAction>;
 		inline function get_ca() return App.ME.ca;
 	#end
 
 
 	/**
-		App entry point: everything starts here
+		应用程序入口点：一切从这里开始
 	**/
 	static function main() {
 		new Boot();
 	}
 
 	/**
-		Called when engine is ready, actual app can start
+		当引擎准备就绪时调用，实际的应用程序可以开始运行
 	**/
 	override function init() {
 		new App(s2d);
 		onResize();
 	}
 
-	// Window resized
+	// 窗口大小调整时
 	override function onResize() {
 		super.onResize();
 		dn.Process.resizeAll();
 	}
 
 
-	/** Main app loop **/
+	/** 主应用程序循环 **/
 	override function update(deltaTime:Float) {
 		super.update(deltaTime);
 
-		// Debug controls over app speed
+		// 调试模式下控制应用程序速度
 		var adjustedTmod = hxd.Timer.tmod;
 		#if debug
 		if( App.exists() ) {
-			// Slow down (toggle)
+			// 减速（切换）
 			if( ca.isPressed(DebugSlowMo)  )
 				tmodSpeedMul = tmodSpeedMul>=1 ? 0.2 : 1;
 			adjustedTmod *= tmodSpeedMul;
 
-			// Turbo (by holding a key)
+			// 加速（按住按键时）
 			adjustedTmod *= ca.isDown(DebugTurbo) ? 5 : 1;
 		}
 		#end
@@ -58,10 +58,10 @@ class Boot extends hxd.App {
 		try {
 		#end
 
-			// Run all dn.Process instances loops
+			// 运行所有 dn.Process 实例的循环
 			dn.Process.updateAll(adjustedTmod);
 
-			// Update current sprite atlas "tmod" value (for animations)
+			// 更新当前精灵图集的 "tmod" 值（用于动画）
 			Assets.update(adjustedTmod);
 
 		#if( hl && !debug )
