@@ -1,51 +1,50 @@
 /**
-	The Const class is a place for you to store various values that should be available everywhere in your code. Example: `Const.FPS`
+	Const 类用于存储在代码中需要全局访问的各种值。例如: `Const.FPS`
 **/
 class Const {
 #if !macro
 
-	/** Default engine framerate (60) **/
+	/** 默认引擎帧率 (60) **/
 	public static var FPS(get,never) : Int;
 		static inline function get_FPS() return Std.int( hxd.System.getDefaultFrameRate() );
 
 	/**
-		"Fixed" updates framerate. 30fps is a good value here, as it's almost guaranteed to work on any decent setup, and it's more than enough to run any gameplay related physics.
+		"固定"更新帧率。30fps是个不错的选择，因为它几乎可以在任何像样的设备上运行，
+		而且对于任何游戏相关的物理运算来说都足够了。
 	**/
 	public static final FIXED_UPDATE_FPS = 30;
 
-	/** Grid size in pixels **/
+	/** 网格大小（像素） **/
 	public static final GRID = 16;
 
-	/** "Infinite", sort-of. More like a "big number" **/
+	/** "无限"值，或者说是一个"很大的数" **/
 	public static final INFINITE : Int = 0xfffFfff;
 
 	static var _nextUniqueId = 0;
-	/** Unique value generator **/
+	/** 唯一值生成器 **/
 	public static inline function makeUniqueId() {
 		return _nextUniqueId++;
 	}
 
-	/** Viewport scaling **/
+	/** 视口缩放 **/
 	public static var SCALE(get,never) : Int;
 		static inline function get_SCALE() {
-			// can be replaced with another way to determine the game scaling
+			// 可以替换为其他确定游戏缩放的方式
 			return dn.heaps.Scaler.bestFit_i(200,200);
 		}
 
-	/** Specific scaling for top UI elements **/
+	/** UI元素的特定缩放 **/
 	public static var UI_SCALE(get,never) : Float;
 		static inline function get_UI_SCALE() {
-			// can be replaced with another way to determine the UI scaling
+			// 可以替换为其他确定UI缩放的方式
 			return dn.heaps.Scaler.bestFit_i(400,400);
 		}
 
-
-	/** Current build information, including date, time, language & various other things **/
+	/** 当前构建信息，包括日期、时间、语言和其他各种信息 **/
 	public static var BUILD_INFO(get,never) : String;
 		static function get_BUILD_INFO() return dn.MacroTools.getBuildInfo();
 
-
-	/** Game layers indexes **/
+	/** 游戏图层索引 **/
 	static var _inc = 0;
 	public static var DP_BG = _inc++;
 	public static var DP_FX_BG = _inc++;
@@ -55,24 +54,25 @@ class Const {
 	public static var DP_TOP = _inc++;
 	public static var DP_UI = _inc++;
 
-
 	/**
-		Simplified "constants database" using CastleDB and JSON files
-		It will be filled with all values found in both following sources:
+		使用 CastleDB 和 JSON 文件的简化"常量数据库"
+		它将包含以下两个来源中的所有值：
 
-		- `res/const.json`, a basic JSON file,
-		- `res/data.cdb`, the CastleDB file, from the sheet named "ConstDb".
+		- `res/const.json`，一个基本的JSON文件
+		- `res/data.cdb`，CastleDB文件中名为"ConstDb"的表
 
-		This allows super easy access to your game constants and settings. Example:
+		这允许你非常容易地访问游戏常量和设置。例如：
 
-			Having `res/const.json`:
+			在 `res/const.json` 中：
 				{ "myValue":5, "someText":"hello" }
 
-			You may use:
-				Const.db.myValue; // equals to 5
-				Const.db.someText; // equals to "hello"
+			你可以使用：
+				Const.db.myValue; // 等于 5
+				Const.db.someText; // 等于 "hello"
 
-		If the JSON changes on runtime, the `myValue` field is kept up-to-date, allowing testing without recompiling. IMPORTANT: this hot-reloading only works if the project was built using the `-debug` flag. In release builds, all values become constants and are fully embedded.
+		如果JSON在运行时发生变化，`myValue`字段会保持更新，这允许在不重新编译的情况下进行测试。
+		重要提示：这种热重载功能仅在使用`-debug`标志构建项目时有效。
+		在发布版本中，所有值都会变成常量并被完全嵌入。
 	**/
 	public static var db = ConstDbBuilder.buildVar(["data.cdb", "const.json"]);
 

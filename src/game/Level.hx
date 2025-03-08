@@ -1,12 +1,12 @@
 class Level extends GameChildProcess {
-	/** Level grid-based width**/
+	/** 关卡基于网格的宽度 **/
 	public var cWid(default,null): Int;
-	/** Level grid-based height **/
+	/** 关卡基于网格的高度 **/
 	public var cHei(default,null): Int;
 
-	/** Level pixel width**/
+	/** 关卡像素宽度 **/
 	public var pxWid(default,null) : Int;
-	/** Level pixel height**/
+	/** 关卡像素高度 **/
 	public var pxHei(default,null) : Int;
 
 	public var data : World_Level;
@@ -42,25 +42,25 @@ class Level extends GameChildProcess {
 		marks = null;
 	}
 
-	/** TRUE if given coords are in level bounds **/
+	/** 判断给定坐标是否在关卡边界内 **/
 	public inline function isValid(cx,cy) return cx>=0 && cx<cWid && cy>=0 && cy<cHei;
 
-	/** Gets the integer ID of a given level grid coord **/
+	/** 获取给定关卡网格坐标的整数ID **/
 	public inline function coordId(cx,cy) return cx + cy*cWid;
 
-	/** Ask for a level render that will only happen at the end of the current frame. **/
+	/** 请求关卡重新渲染，这将在当前帧结束时进行 **/
 	public inline function invalidate() {
 		invalidated = true;
 	}
 
-	/** Return TRUE if "Collisions" layer contains a collision value **/
+	/** 返回"Collisions"层在给定位置是否包含碰撞值 **/
 	public inline function hasCollision(cx,cy) : Bool {
 		return !isValid(cx,cy) ? true : marks.has(M_Coll_Wall, cx,cy);
 	}
 
-	/** Render current level**/
+	/** 渲染当前关卡 **/
 	function render() {
-		// Placeholder level render
+		// 关卡渲染占位符
 		root.removeChildren();
 
 		var tg = new h2d.TileGroup(tilesetSource, root);
