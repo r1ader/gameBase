@@ -1,25 +1,25 @@
 class Game extends AppChildProcess {
 	public static var ME : Game;
 
-	/** Game controller (pad or keyboard) **/
+	/** 游戏控制器（手柄或键盘） **/
 	public var ca : ControllerAccess<GameAction>;
 
-	/** Particles **/
+	/** 粒子效果 **/
 	public var fx : Fx;
 
-	/** Basic viewport control **/
+	/** 基础视口控制 **/
 	public var camera : Camera;
 
-	/** Container of all visual game objects. Ths wrapper is moved around by Camera. **/
+	/** 所有视觉游戏对象的容器。这个包装器由Camera移动 **/
 	public var scroller : h2d.Layers;
 
-	/** Level data **/
+	/** 关卡数据 **/
 	public var level : Level;
 
-	/** UI **/
+	/** 用户界面 **/
 	public var hud : ui.Hud;
 
-	/** Slow mo internal values**/
+	/** 慢动作内部值 **/
 	var curGameSpeed = 1.0;
 	var slowMos : Map<SlowMoId, { id:SlowMoId, t:Float, f:Float }> = new Map();
 
@@ -55,17 +55,17 @@ class Game extends AppChildProcess {
 	}
 
 
-	/** Load a level **/
+	/** 加载关卡 **/
 	function startLevel(l:World.World_Level) {
 		if( level!=null )
 			level.destroy();
 		fx.clear();
-		for(e in Entity.ALL) // <---- Replace this with more adapted entity destruction (eg. keep the player alive)
+		for(e in Entity.ALL) // <---- 替换为更适合的实体销毁方式（例如保持玩家存活）
 			e.destroy();
 		garbageCollectEntities();
 
 		level = new Level(l);
-		// <---- Here: instanciate your level entities
+		// <---- 这里：实例化你的关卡实体
 
 		camera.centerOnTarget();
 		hud.onLevelStart();
@@ -75,14 +75,14 @@ class Game extends AppChildProcess {
 
 
 
-	/** Called when either CastleDB or `const.json` changes on disk **/
+	/** 当 CastleDB 或 `const.json` 在磁盘上发生变化时调用 **/
 	@:allow(App)
 	function onDbReload() {
 		hud.notify("DB reloaded");
 	}
 
 
-	/** Called when LDtk file changes on disk **/
+	/** 当 LDtk 文件在磁盘上发生变化时调用 **/
 	@:allow(assets.Assets)
 	function onLdtkReload() {
 		hud.notify("LDtk reloaded");
@@ -90,13 +90,13 @@ class Game extends AppChildProcess {
 			startLevel( Assets.worldData.all_worlds.SampleWorld.getLevel(level.data.uid) );
 	}
 
-	/** Window/app resize event **/
+	/** 窗口/应用程序调整大小事件 **/
 	override function onResize() {
 		super.onResize();
 	}
 
 
-	/** Garbage collect any Entity marked for destruction. This is normally done at the end of the frame, but you can call it manually if you want to make sure marked entities are disposed right away, and removed from lists. **/
+	/** 垃圾回收任何标记为销毁的实体。这通常在帧结束时完成，但如果你想确保标记的实体立即被处理并从列表中删除，可以手动调用它 **/
 	public function garbageCollectEntities() {
 		if( Entity.GC==null || Entity.GC.allocated==0 )
 			return;
@@ -106,7 +106,7 @@ class Game extends AppChildProcess {
 		Entity.GC.empty();
 	}
 
-	/** Called if game is destroyed, but only at the end of the frame **/
+	/** 如果游戏被销毁，仅在帧结束时调用 **/
 	override function onDispose() {
 		super.onDispose();
 
@@ -121,11 +121,10 @@ class Game extends AppChildProcess {
 
 
 	/**
-		Start a cumulative slow-motion effect that will affect `tmod` value in this Process
-		and all its children.
+		启动累积慢动作效果，这将影响此Process及其所有子进程中的`tmod`值
 
-		@param sec Realtime second duration of this slowmo
-		@param speedFactor Cumulative multiplier to the Process `tmod`
+		@param sec 此慢动作的实时秒数持续时间
+		@param speedFactor Process `tmod`的累积乘数
 	**/
 	public function addSlowMo(id:SlowMoId, sec:Float, speedFactor=0.3) {
 		if( slowMos.exists(id) ) {
@@ -138,7 +137,7 @@ class Game extends AppChildProcess {
 	}
 
 
-	/** The loop that updates slow-mos **/
+	/** 更新慢动作的循环 **/
 	final function updateSlowMos() {
 		// Timeout active slow-mos
 		for(s in slowMos) {
@@ -159,22 +158,22 @@ class Game extends AppChildProcess {
 
 
 	/**
-		Pause briefly the game for 1 frame: very useful for impactful moments,
-		like when hitting an opponent in Street Fighter ;)
+		短暂暂停游戏1帧：对于有冲击力的时刻非常有用，
+		比如在街头霸王中击中对手时 ;)
 	**/
 	public inline function stopFrame() {
 		ucd.setS("stopFrame", 4/Const.FPS);
 	}
 
 
-	/** Loop that happens at the beginning of the frame **/
+	/** 在帧开始时发生的循环 **/
 	override function preUpdate() {
 		super.preUpdate();
 
 		for(e in Entity.ALL) if( !e.destroyed ) e.preUpdate();
 	}
 
-	/** Loop that happens at the end of the frame **/
+	/** 在帧结束时发生的循环 **/
 	override function postUpdate() {
 		super.postUpdate();
 
@@ -194,7 +193,7 @@ class Game extends AppChildProcess {
 	}
 
 
-	/** Main loop but limited to 30 fps (so it might not be called during some frames) **/
+	/** 主循环但限制在30fps（所以在某些帧中可能不会被调用） **/
 	override function fixedUpdate() {
 		super.fixedUpdate();
 
@@ -202,7 +201,7 @@ class Game extends AppChildProcess {
 		for(e in Entity.ALL) if( !e.destroyed ) e.fixedUpdate();
 	}
 
-	/** Main loop **/
+	/** 主循环 **/
 	override function update() {
 		super.update();
 
