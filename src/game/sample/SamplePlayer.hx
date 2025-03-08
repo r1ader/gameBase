@@ -1,18 +1,18 @@
 package sample;
 
 /**
-	SamplePlayer is an Entity with some extra functionalities:
-	- user controlled (using gamepad or keyboard)
-	- falls with gravity
-	- has basic level collisions
-	- some squash animations, because it's cheap and they do the job
+	SamplePlayer 是一个具有一些额外功能的实体：
+	- 用户控制（使用游戏手柄或键盘）
+	- 受重力影响下落
+	- 具有基本的关卡碰撞检测
+	- 一些挤压动画，因为它们简单且能完成工作
 **/
 
 class SamplePlayer extends Entity {
 	var ca : ControllerAccess<GameAction>;
 	var walkSpeed = 0.;
 
-	// This is TRUE if the player is not falling
+	// 当玩家没有下落时这个值为 TRUE
 	var onGround(get,never) : Bool;
 		inline function get_onGround() return !destroyed && vBase.dy==0 && yr==1 && level.hasCollision(cx,cy+1);
 
@@ -20,23 +20,23 @@ class SamplePlayer extends Entity {
 	public function new() {
 		super(5,5);
 
-		// Start point using level entity "PlayerStart"
+		// 使用关卡实体"PlayerStart"作为起点
 		var start = level.data.l_Entities.all_PlayerStart[0];
 		if( start!=null )
 			setPosCase(start.cx, start.cy);
 
-		// Misc inits
+		// 杂项初始化
 		vBase.setFricts(0.84, 0.94);
 
-		// Camera tracks this
+		// 摄像机追踪此实体
 		camera.trackEntity(this, true);
 		camera.clampToLevelBounds = true;
 
-		// Init controller
+		// 初始化控制器
 		ca = App.ME.controller.createAccess();
 		ca.lockCondition = Game.isGameControllerLocked;
 
-		// Placeholder display
+		// 占位显示
 		var b = new h2d.Bitmap( h2d.Tile.fromColor(Green, iwid, ihei), spr );
 		b.tile.setCenterRatio(0.5,1);
 	}
@@ -44,29 +44,29 @@ class SamplePlayer extends Entity {
 
 	override function dispose() {
 		super.dispose();
-		ca.dispose(); // don't forget to dispose controller accesses
+		ca.dispose(); // 不要忘记释放控制器访问
 	}
 
 
-	/** X collisions **/
+	/** X轴碰撞 **/
 	override function onPreStepX() {
 		super.onPreStepX();
 
-		// Right collision
+		// 右侧碰撞
 		if( xr>0.8 && level.hasCollision(cx+1,cy) )
 			xr = 0.8;
 
-		// Left collision
+		// 左侧碰撞
 		if( xr<0.2 && level.hasCollision(cx-1,cy) )
 			xr = 0.2;
 	}
 
 
-	/** Y collisions **/
+	/** Y轴碰撞 **/
 	override function onPreStepY() {
 		super.onPreStepY();
 
-		// Land on ground
+		// 落地
 		if( yr>1 && level.hasCollision(cx,cy+1) ) {
 			setSquashY(0.5);
 			vBase.dy = 0;
@@ -76,25 +76,26 @@ class SamplePlayer extends Entity {
 			onPosManuallyChangedY();
 		}
 
-		// Ceiling collision
+		// 天花板碰撞
 		if( yr<0.2 && level.hasCollision(cx,cy-1) )
 			yr = 0.2;
 	}
 
 
 	/**
-		Control inputs are checked at the beginning of the frame.
-		VERY IMPORTANT NOTE: because game physics only occur during the `fixedUpdate` (at a constant 30 FPS), no physics increment should ever happen here! What this means is that you can SET a physics value (eg. see the Jump below), but not make any calculation that happens over multiple frames (eg. increment X speed when walking).
+		在帧开始时检查控制输入。
+		非常重要的注意事项：因为游戏物理只在 `fixedUpdate`（以恒定30 FPS）期间发生，这里不应该进行任何物理增量！
+		这意味着你可以设置一个物理值（例如，参见下面的Jump），但不能进行任何跨多帧的计算（例如，走路时增加X速度）。
 	**/
 	override function preUpdate() {
 		super.preUpdate();
 
 		walkSpeed = 0;
 		if( onGround )
-			cd.setS("recentlyOnGround",0.1); // allows "just-in-time" jumps
+			cd.setS("recentlyOnGround",0.1); // 允许"及时"跳跃
 
 
-		// Jump
+		// 跳跃
 		if( cd.has("recentlyOnGround") && ca.isPressed(Jump) ) {
 			vBase.dy = -0.85;
 			setSquashX(0.6);
@@ -103,10 +104,10 @@ class SamplePlayer extends Entity {
 			ca.rumble(0.05, 0.06);
 		}
 
-		// Walk
+		// 行走
 		if( !isChargingAction() && ca.getAnalogDist2(MoveLeft,MoveRight)>0 ) {
-			// As mentioned above, we don't touch physics values (eg. `dx`) here. We just store some "requested walk speed", which will be applied to actual physics in fixedUpdate.
-			walkSpeed = ca.getAnalogValue2(MoveLeft,MoveRight); // -1 to 1
+			// 如上所述，我们在这里不直接修改物理值（如 `dx`）。我们只是存储一个"请求的行走速度"，它将在 fixedUpdate 中应用到实际物理中。
+			walkSpeed = ca.getAnalogValue2(MoveLeft,MoveRight); // -1 到 1
 		}
 	}
 
@@ -114,12 +115,12 @@ class SamplePlayer extends Entity {
 	override function fixedUpdate() {
 		super.fixedUpdate();
 
-		// Gravity
+		// 重力
 		if( !onGround )
 			vBase.dy+=0.05;
 
-		// Apply requested walk movement
+		// 应用请求的行走移动
 		if( walkSpeed!=0 )
-			vBase.dx += walkSpeed * 0.045; // some arbitrary speed
+			vBase.dx += walkSpeed * 0.045; // 一些任意速度
 	}
 }
